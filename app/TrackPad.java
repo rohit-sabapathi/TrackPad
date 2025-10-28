@@ -7,6 +7,7 @@ import service.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.datatransfer.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -59,9 +60,9 @@ public class TrackPad extends JFrame {
     private void setupMenu() {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
+        JMenu editMenu = new JMenu("Edit");
         JMenu options = new JMenu("Options");
 
-        // New basic file operations
         JMenuItem newFile = new JMenuItem("New");
         newFile.addActionListener(e -> handleNewFile());
         
@@ -74,24 +75,34 @@ public class TrackPad extends JFrame {
         JMenuItem saveAsFile = new JMenuItem("Save As");
         saveAsFile.addActionListener(e -> handleSaveAsFile());
 
-        // Separator
         JSeparator separator1 = new JSeparator();
-        
-        // Existing version management operations
         JMenuItem saveToDisk = new JMenuItem("Save All to Disk");
         saveToDisk.addActionListener(e -> saveToDisk());
 
         JMenuItem loadFromDisk = new JMenuItem("Load from Disk");
         loadFromDisk.addActionListener(e -> loadVersionsFromFile());
 
-        // Separator
         JSeparator separator2 = new JSeparator();
         
-        // Exit option
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> handleExit());
 
-        // Options menu items
+        JMenuItem cutItem = new JMenuItem("Cut");
+        cutItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        cutItem.addActionListener(e -> cutText());
+        
+        JMenuItem copyItem = new JMenuItem("Copy");
+        copyItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        copyItem.addActionListener(e -> copyText());
+        
+        JMenuItem pasteItem = new JMenuItem("Paste");
+        pasteItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        pasteItem.addActionListener(e -> pasteText());
+        
+        JMenuItem selectAllItem = new JMenuItem("Select All");
+        selectAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        selectAllItem.addActionListener(e -> editor.selectAll());
+
         JCheckBoxMenuItem autoSaveToggle = new JCheckBoxMenuItem("Enable Autosave");
         JMenuItem setInterval = new JMenuItem("Set Autosave Interval");
 
@@ -112,7 +123,6 @@ public class TrackPad extends JFrame {
             }
         });
 
-        // Add items to File menu
         fileMenu.add(newFile);
         fileMenu.add(openFile);
         fileMenu.add(saveFile);
@@ -123,11 +133,17 @@ public class TrackPad extends JFrame {
         fileMenu.add(separator2);
         fileMenu.add(exitItem);
         
-        // Add items to Options menu
+        editMenu.add(cutItem);
+        editMenu.add(copyItem);
+        editMenu.add(pasteItem);
+        editMenu.addSeparator();
+        editMenu.add(selectAllItem);
+        
         options.add(autoSaveToggle);
         options.add(setInterval);
 
         menuBar.add(fileMenu);
+        menuBar.add(editMenu);
         menuBar.add(options);
         setJMenuBar(menuBar);
     }
@@ -144,7 +160,6 @@ public class TrackPad extends JFrame {
     }
 
     private void setupShortcuts() {
-        // Version save shortcut (Ctrl+S)
         KeyStroke saveKey = KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
         editor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(saveKey, "save");
         editor.getActionMap().put("save", new AbstractAction() {
@@ -154,7 +169,6 @@ public class TrackPad extends JFrame {
             }
         });
         
-        // File operation shortcuts
         KeyStroke newKey = KeyStroke.getKeyStroke(KeyEvent.VK_N, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
         editor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(newKey, "new");
         editor.getActionMap().put("new", new AbstractAction() {
@@ -180,6 +194,70 @@ public class TrackPad extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 handleSaveFile();
             }
+        });
+        
+        KeyStroke cutKey = KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        editor.getInputMap(JComponent.WHEN_FOCUSED).put(cutKey, "cut");
+        editor.getActionMap().put("cut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cutText();
+            }
+        });
+        
+        KeyStroke copyKey = KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        editor.getInputMap(JComponent.WHEN_FOCUSED).put(copyKey, "copy");
+        editor.getActionMap().put("copy", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                copyText();
+            }
+        });
+        
+        KeyStroke pasteKey = KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        editor.getInputMap(JComponent.WHEN_FOCUSED).put(pasteKey, "paste");
+        editor.getActionMap().put("paste", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pasteText();
+            }
+        });
+        
+        KeyStroke selectAllKey = KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx());
+        editor.getInputMap(JComponent.WHEN_FOCUSED).put(selectAllKey, "selectAll");
+        editor.getActionMap().put("selectAll", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editor.selectAll();
+            }
+        });
+
+        JComponent root = getRootPane();
+        InputMap rim = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap ram = root.getActionMap();
+
+        rim.put(cutKey, "globalCut");
+        ram.put("globalCut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { cutText(); }
+        });
+
+        rim.put(copyKey, "globalCopy");
+        ram.put("globalCopy", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { copyText(); }
+        });
+
+        rim.put(pasteKey, "globalPaste");
+        ram.put("globalPaste", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { pasteText(); }
+        });
+
+        rim.put(selectAllKey, "globalSelectAll");
+        ram.put("globalSelectAll", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { editor.selectAll(); }
         });
     }
 
@@ -214,12 +292,10 @@ public class TrackPad extends JFrame {
         }
     }
 
-    // New file operation handlers
     private void handleNewFile() {
         String result = fileOperationManager.executeOperation("New", this, editor.getText());
         if (result != null) {
             editor.setText(result);
-            // Clear version list for new file
             versionListModel.clear();
             versionManager.setAllVersions(new java.util.ArrayList<>());
             setTitle("Java TrackPad - New File");
@@ -230,10 +306,9 @@ public class TrackPad extends JFrame {
         String result = fileOperationManager.executeOperation("Open", this, editor.getText());
         if (result != null) {
             editor.setText(result);
-            // Clear version list and add the opened content as first version
             versionListModel.clear();
             versionManager.setAllVersions(new java.util.ArrayList<>());
-            saveVersion(); // Save the opened content as first version
+            saveVersion();
             setTitle("Java TrackPad - " + fileOperationManager.getCurrentFilePath());
         }
     }
@@ -257,7 +332,6 @@ public class TrackPad extends JFrame {
     }
     
     private void handleExit() {
-        // Check for unsaved changes
         if (fileOperationManager.isModified()) {
             int result = JOptionPane.showConfirmDialog(
                 this, 
@@ -269,13 +343,49 @@ public class TrackPad extends JFrame {
             if (result == JOptionPane.YES_OPTION) {
                 handleSaveFile();
             } else if (result == JOptionPane.CANCEL_OPTION) {
-                return; // Don't exit
+                return;
             }
         }
         
-        // Cleanup resources
         fileOperationManager.shutdown();
         System.exit(0);
+    }
+
+    private void cutText() {
+        String selectedText = editor.getSelectedText();
+        if (selectedText != null && !selectedText.isEmpty()) {
+            copyToClipboard(selectedText);
+            editor.replaceSelection("");
+        }
+    }
+
+    private void copyText() {
+        String selectedText = editor.getSelectedText();
+        if (selectedText != null && !selectedText.isEmpty()) {
+            copyToClipboard(selectedText);
+        }
+    }
+
+    private void pasteText() {
+        String clipboardText = getFromClipboard();
+        if (clipboardText != null) {
+            editor.replaceSelection(clipboardText);
+        }
+    }
+
+    private void copyToClipboard(String text) {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        StringSelection selection = new StringSelection(text);
+        clipboard.setContents(selection, null);
+    }
+
+    private String getFromClipboard() {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        try {
+            return (String) clipboard.getData(DataFlavor.stringFlavor);
+        } catch (UnsupportedFlavorException | IOException e) {
+            return null;
+        }
     }
 
     public static void main(String[] args) {
