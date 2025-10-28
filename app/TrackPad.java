@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class NotepadApp extends JFrame {
+public class TrackPad extends JFrame {
 
     private final JTextArea editor;
     private final DefaultListModel<String> versionListModel;
@@ -26,8 +26,8 @@ public class NotepadApp extends JFrame {
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String SAVE_FILE = "versions.ser";
 
-    public NotepadApp() {
-        super("Java Notepad - With File Save");
+    public TrackPad() {
+        super("Java TrackPad");
 
         versionManager = new VersionManager<>();
         manualSaver = new ManualSave(versionManager);
@@ -222,7 +222,7 @@ public class NotepadApp extends JFrame {
             // Clear version list for new file
             versionListModel.clear();
             versionManager.setAllVersions(new java.util.ArrayList<>());
-            setTitle("Java Notepad - With File Save - New File");
+            setTitle("Java TrackPad - New File");
         }
     }
     
@@ -234,7 +234,7 @@ public class NotepadApp extends JFrame {
             versionListModel.clear();
             versionManager.setAllVersions(new java.util.ArrayList<>());
             saveVersion(); // Save the opened content as first version
-            setTitle("Java Notepad - With File Save - " + fileOperationManager.getCurrentFilePath());
+            setTitle("Java TrackPad - " + fileOperationManager.getCurrentFilePath());
         }
     }
     
@@ -242,7 +242,7 @@ public class NotepadApp extends JFrame {
         String result = fileOperationManager.executeOperation("Save", this, editor.getText());
         if (result != null) {
             fileOperationManager.setCurrentFilePath(result);
-            setTitle("Java Notepad - With File Save - " + result);
+            setTitle("Java TrackPad - " + result);
             JOptionPane.showMessageDialog(this, "File saved successfully!", "Save", JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -251,7 +251,7 @@ public class NotepadApp extends JFrame {
         String result = fileOperationManager.executeOperation("Save As", this, editor.getText());
         if (result != null) {
             fileOperationManager.setCurrentFilePath(result);
-            setTitle("Java Notepad - With File Save - " + result);
+            setTitle("Java TrackPad - " + result);
             JOptionPane.showMessageDialog(this, "File saved successfully!", "Save As", JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -279,6 +279,6 @@ public class NotepadApp extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new NotepadApp().setVisible(true));
+        SwingUtilities.invokeLater(() -> new TrackPad().setVisible(true));
     }
 }
